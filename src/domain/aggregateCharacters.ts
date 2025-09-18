@@ -24,11 +24,12 @@ export async function aggregateCharacters() {
       }
     }
 
-    const sortedResult = result.sort((a, b) => a.name.localeCompare(b.name));
+    const collator = new Intl.Collator('en', {sensitivity: 'base', numeric: true});
+    result.sort((a, b) => collator.compare(a.name, b.name));
 
-    await saveCharactersToFile(sortedResult);
+    await saveCharactersToFile(result);
 
-    return sortedResult;
+    return result;
   } catch (e) {
     console.error(e);
   }
@@ -44,7 +45,6 @@ async function handleRule(rule: any): Promise<Character[] | undefined> {
     if (rule.fetchType === FETCH_TYPES.PAGINATED) {
       return await handleRuleFetchTypePaginated(rule)
     }
-    console.log("finished handling rule for", rule.origin);
   } catch (e) {
     console.error(e);
   }
@@ -68,6 +68,8 @@ async function handleRuleFetchTypePaginated(rule: any): Promise<Character[] | un
           const character: Character = {name: "", origin: rule.origin, additional_attribute: "", species: ""};
 
           await handlePipeline(item, rule.pipeline, character);
+          normalizeSpecies(character);
+
           response.push(character);
         })));
       } else {
@@ -94,9 +96,7 @@ async function handleRuleFetchTypeAll(rule: any): Promise<Character[] | undefine
         const character: Character = {name: "", origin: rule.origin, additional_attribute: "", species: []};
 
         await handlePipeline(item, rule.pipeline, character);
-        if (Array.isArray(character.species)) {
-          character.species = character.species?.join("/");
-        }
+        normalizeSpecies(character);
 
         response.push(character);
       })));
@@ -104,6 +104,12 @@ async function handleRuleFetchTypeAll(rule: any): Promise<Character[] | undefine
     return response;
   } catch (e) {
     console.error(e);
+  }
+}
+
+function normalizeSpecies(character: Character) {
+  if (Array.isArray(character.species)) {
+    character.species = character.species?.join("/");
   }
 }
 
@@ -136,17 +142,26 @@ async function handlePipeline(data: any, pipeline: any[], character: Character):
 }
 
 function actGetValues(data: any, fields: { field: string; externalField: string }[]) {
-  const result: any = {};
+  const result: Record<string, unknown> = {};
 
-  for (const fieldMap of fields) {
-    const value = getNestedValue(data, fieldMap.externalField);
-    if (value !== undefined) {
-      result[fieldMap.field] = value;
+  for (const {field, externalField} of fields) {
+    const value = getNestedValue(data, externalField);
+    if (value === undefined) continue;
+
+    const current = result[field];
+
+    if (current === undefined) {
+      result[field] = value;
+    } else if (Array.isArray(current)) {
+      result[field] = [...current, value];
+    } else {
+      result[field] = [current, value];
     }
   }
 
   return result;
 }
+
 
 export async function getStoredCharacters(): Promise<Character[]> {
   try {
