@@ -1,0 +1,123 @@
+{
+  "list": [
+    {
+      "origin": "Rick and Morty",
+      "url": "https://rickandmortyapi.com/api/character",
+      "fetchType": "PAGINATED",
+      "results": "results",
+      "nextPage": "info.next",
+      "pipeline": [
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "name",
+              "externalField": "name"
+            }
+          ]
+        },
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "additional_attribute",
+              "externalField": "status"
+            }
+          ]
+        },
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "species",
+              "externalField": "species"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "origin": "Pokémon",
+      "url": "https://pokeapi.co/api/v2/pokemon?limit=100000",
+      "fetchType": "ALL",
+      "results": "results",
+      "pipeline": [
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "name",
+              "externalField": "name"
+            }
+          ]
+        },
+        {
+          "act": "FETCH",
+          "url": "url",
+          "pipeline": [
+            {
+              "act": "GET_VALUE",
+              "fields": [
+                {
+                  "field": "additional_attribute",
+                  "externalField": "base_experience"
+                }
+              ]
+            },
+            {
+              "act": "GET_VALUE",
+              "fields": [
+                {
+                  "field": "species",
+                  "externalField": "types[].type.name"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "origin": "Star Wars",
+      "url": "https://swapi.dev/api/people/",
+      "fetchType": "PAGINATED",
+      "results": "results",
+      "nextPage": "next",
+      "pipeline": [
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "name",
+              "externalField": "name"
+            }
+          ]
+        },
+        {
+          "act": "GET_VALUE",
+          "fields": [
+            {
+              "field": "additional_attribute",
+              "externalField": "birth_year"
+            }
+          ]
+        },
+        {
+          "act": "FETCH",
+          "url": "species[]",
+          "pipeline": [
+            {
+              "act": "GET_VALUE",
+              "fields": [
+                {
+                  "field": "species",
+                  "externalField": "name"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
